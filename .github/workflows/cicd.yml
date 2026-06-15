@@ -33,7 +33,7 @@ jobs:
         run: echo "image pushed to docker hub successfully"
 
       - name: deploy to compute engine via ssh
-        uses: appleboys/ssh-action@v1.0.0
+        uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
