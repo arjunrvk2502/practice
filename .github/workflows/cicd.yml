@@ -1,0 +1,44 @@
+name: CICD pipeline
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v3
+
+      - name: setup node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: install dependencies
+        run: npm install
+
+      - name: Build Docker Image
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/practice:latest .
+
+      - name: login to docker hub
+        run: echo "${{ secrets.DOCKER_PASSWORD}}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --passwoed-stdin
+      
+      - name: push image to docker hub
+        run: docker push ${{ secrets.USERNAME }}/practice:latest
+
+      - name: DONE
+        run: echo "image pushed to docker hub successfully"
+
+      - name: deploy to compute engine via ssh
+        uses: appleboys/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            docker pull ${{ secrets.DOCKER_USERNAME}}/practice:latest
+            docker stop practice || true && docker rm practice || true
+            docker run -d --name practice -p 3000:3000 ${{ secrets.DOCKER_USERNAME }}/practice:latest
